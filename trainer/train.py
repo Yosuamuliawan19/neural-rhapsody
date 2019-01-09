@@ -1,23 +1,29 @@
 from music21 import converter, instrument, note, chord
+from google.cloud import storage
+import os
 
-song_directory = "midi_songs/"
+#----Function to fetch midi files from Google Cloud Storage----
+def download_files_from_gcs():
+    print("Initializing client")
+    storage_client = storage.Client("is-music-lstm")
+    print("Creating Bucket")
+    bucket = storage_client.get_bucket("music-lstm")
+    print("Creating Directory")
+    dirName = 'midi_songs'
+    if not os.path.exists(dirName):
+        # Create target Directory
+        os.mkdir(dirName)
+        print("Directory " +  dirName +  " Created ") 
+    else:
+        print("Directory " + dirName +  " already exists")
+    # Save file 
+    print("Loading midi songs from gcs")
+    blobs=list(bucket.list_blobs(prefix="midi_songs"))
+    for blob in blobs:
+        if(not blob.name.endswith("/")):
+            blob.download_to_filename(blob.name)
+    print("Finsihed loading songs from gcs")
 
-def read_notes():
-   result = []
-   for song in glob.glob(song_directory + "*.mid"):
-       data = converter.parse(song)
-       print("Parsing %s :" % file)
-       parsing = None
-       try :
-           parsing = instrument.partitionByInstrument(data).parts[0].recurse()
-       except:
-           parsing = data.flat.notes
-       for sample in parsing
-           if isinstance(sample, note.Note):
-               result.append(str(sample.pitch))
-           elif isinstance(sample, chord.Chord):
-               result.append('.'.join(str(n) for n in element.normalOrder))
-   return result
 if __name__ == "__main__":
 
-    notes = read_notes()
+    download_files_from_gcs()
