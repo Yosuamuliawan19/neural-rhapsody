@@ -1,19 +1,46 @@
-from music21 import converter, instrument, note, chord
+import glob
+import pickle
+import numpy
+import h5py
+import argparse
+import os
+import tensorflow as tf
+from tensorflow.python.client import device_lib
+from tensorflow.python.lib.io import file_io
 from google.cloud import storage
+from music21 import converter, instrument, note, chord
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import LSTM
 from keras.layers import Activation
-import os
-import glob
-import numpy
 from keras.utils import np_utils
+from keras.callbacks import ModelCheckpoint
+from keras.callbacks import TensorBoard
+from keras.callbacks import LambdaCallback
+from keras.utils import multi_gpu_model
+from keras.models import load_model
+from keras.callbacks import Callback
+from keras import backend as K
+from datetime import datetime
+
 #----Global Variables----
 current_epoch = 1
 GCSPath = "gs://music-lstm"
 input_length = 100
 n_vocab = 0
+#----Callback function to save model each epoch----
+class epoch_callback(Callback):
+     def on_epoch_end(self, batch, logs={}):
+        global current_epoch
+        path = 'model'+ str(current_epoch)+'.h5'
+
+        print("Saving model of epoch:" + str(current_epoch) + " in " + path);
+        self.model.save(path)
+        with file_io.FileIO(path, mode='r') as input_f:
+            with file_io.FileIO( GCSPath +'/' + path, mode='w+') as output_f:
+                output_f.write(input_f.read())       
+        current_epoch = current_epoch + 1
 #----Function to fetch midi files from Google Cloud Storage----
 def download_files_from_gcs():
     print("Initializing client")
@@ -98,7 +125,34 @@ def create_model(network_input):
     model.add(Activation('softmax'))
     model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
     return model
-if __name__ == "__main__":
+def train(model, network_input, network_output):
+    print("Checking GPUs 1")
+    print(K.tensorflow_backend._get_available_gpus())
+    print("Checking GPUs 2")
+    print(device_lib.list_local_devices())
+    # Checkpoints
+    filepath = "weights-improvement-{epoch:02d}-{loss:.4f}-bigger.hdf5"
+    checkpoint = ModelCheckpoint(
+        filepath,
+        monitor='loss',
+        verbose=0,
+        save_best_only=True,
+        mode='min'
+    )
+    # Callbacks for training
+    tbCallBack = TensorBoard(log_dir=GCSPath+'/logs', histogram_freq=0, write_graph=True, write_images=True)
+    callbacks_list = [checkpoint, tbCallBack, epoch_callback() ]
+    # Fitting / Training the model
+    print("Start training model")
+    model.fit(network_input, network_output, epochs=100, batch_size=64, callbacks=callbacks_list)
+    # Save final model.h5 on to google storage
+    model.save('model_final.h5')
+    with file_io.FileIO('model_final.h5', mode='r') as input_f:
+        with file_io.FileIO(GCSPath +'/model_final.h5', mode='w+') as output_f:
+            output_f.write(input_f.read())          
+
+if __name__ == '__main__':
     download_files_from_gcs()
     input_data, labels = prepare_data()
     model = create_model(input_data)
+    train(model, input_data, labels)
