@@ -18,8 +18,6 @@ def read_notes():
            elif isinstance(sample, chord.Chord):
                result.append('.'.join(str(n) for n in element.normalOrder))
    return result
-
-
 if __name__ == "__main__":
 
     notes = read_notes()
