@@ -1,5 +1,10 @@
 from music21 import converter, instrument, note, chord
 from google.cloud import storage
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import Dropout
+from keras.layers import LSTM
+from keras.layers import Activation
 import os
 import glob
 import numpy
@@ -76,6 +81,24 @@ def prepare_data():
     print("VOCAB")
     print(n_vocab)
     return (network_input, network_output)
+def create_model(network_input):
+    model = Sequential()
+    model.add(LSTM(
+        512,
+        input_shape=(network_input.shape[1], network_input.shape[2]),
+        return_sequences=True
+    ))
+    model.add(Dropout(0.3))
+    model.add(LSTM(512, return_sequences=True))
+    model.add(Dropout(0.3))
+    model.add(LSTM(512))
+    model.add(Dense(256))
+    model.add(Dropout(0.3))
+    model.add(Dense(n_vocab))
+    model.add(Activation('softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+    return model
 if __name__ == "__main__":
-
     download_files_from_gcs()
+    input_data, labels = prepare_data()
+    model = create_model(input_data)
