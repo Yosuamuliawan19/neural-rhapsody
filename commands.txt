@@ -1,0 +1,8 @@
+gcloud ml-engine jobs submit training chopin_new --module-name=trainer.train --package-path=./trainer --job-dir=gs://music-lstm --region=us-central1 --config=trainer/cloudml-gpu.yaml
+
+
+tensorboard --logdir=gs://is-music-lstm --host localhost --port 8088
+
+tensorboard --logdir=gs://music-lstm/logs-beethoven --port=8080
+
+export GOOGLE_APPLICATION_CREDENTIALS="/Users/yosuamuliawan/Downloads/is-music-lstm-3e2e18110a30.json"
