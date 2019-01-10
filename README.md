@@ -1,5 +1,6 @@
 # Neural Rhapsody
 Neural rhapsody is a neural network web app that uses an LSTM network to generate midi files using styles from customizable artist
+![alt text](https://www.telegraph.co.uk/content/dam/music/2015-10/Oct29/freddie-mercury-li_1988517a_trans_NvBQzQNjv4BqqQOfaCczG4orCRBni8KzmGpkpi6EAZPmEJ8FOCKQZRw.jpg?imwidth=450)
 # Features!
   - Generate any length of music you want
   - Use your own training set to generate songs according to artist style you want
