@@ -11,6 +11,7 @@ You can also:
   - Store your models in Google Cloud Platform Storage Bucket
   - Serve your models as web REST API
 
+[Visit Demo Site !](https://yosuamuliawan19.github.io/neural-rhapsody-demo/)
 
 ### Tech
 
